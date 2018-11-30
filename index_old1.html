@@ -20,25 +20,15 @@
         }
         #train-head-row {
             /* color : white; */
-            border-top: solid lightgray 2px;
-            margin : 0px;
-            padding : 5px 0;
             font-weight: bold;
-        }
-        #train-current-row {
-            margin: 0;
-            padding: 0;
-            text-align:left;
-            height: 30px;
         }
         #train-current-row:nth-child(even) {
             background-color: lightgray;
         }
         #update-train, #remove-train {
-            margin : 4px 2px;
-            padding : 3px;
+            margin : 10px;
+            padding : 5px;
             font-size : 9pt;
-            text-align: center;
             background-color: darkgray;
             color: white;
         }
@@ -53,7 +43,9 @@
 <body>
 
     <div class="container">
+
         <br>
+
         <!-- Jumbotron -->
         <div class="jumbotron">
             <h1 class="text-center">Anytime is Train Time</h1>
@@ -61,6 +53,7 @@
         </div>
 
         <div class="row">
+
             <!-- Current Train schedule -->
             <div class="col-lg-12">
                 <div class="card card-default">
@@ -85,8 +78,8 @@
                             </div>
                             <div class="col-md-2">
                             </div>
-                        </div>
 
+                        </div>
                     </div>
                 </div>
             </div>
@@ -154,7 +147,7 @@
 
         var newFreq = 0; //change the frequent value in a row
 
-        // clear addTrain form
+
         function addTrainClear() {
             $("#train-input").val("");
             $("#desti-input").val("");
@@ -162,7 +155,6 @@
             $("#frequency-input").val("");
         };
 
-        // show current train shedule 
         function showTrain(dataKey, trainID, destination, firstTime, frequency) {
             // First Time (pushed back 1 year to make sure it comes before current time)
             var firstTimeConverted = moment(firstTime, "HH:mm").subtract(1, "years");
@@ -170,7 +162,7 @@
 
             // Current Time
             var currentTime = moment();
-            console.log("CURRENT TIME: " + moment(currentTime).format("HH:mm"));
+            console.log("CURRENT TIME: " + moment(currentTime).format("hh:mm"));
 
             // Difference between the times
             var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
@@ -186,7 +178,7 @@
 
             // Next Train
             var nextTrain = moment().add(tMinutesTillTrain, "minutes");
-            console.log("ARRIVAL TIME: " + moment(nextTrain).format("HH:mm"));
+            console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
 
             // var minAway = moment(nextT, "HH:mm").diff(moment(nowT, "HH:mm"), "minutes");
 
@@ -194,7 +186,7 @@
                 "<div class='col-md-2'> " + trainID + "</div>" +
                 "<div class='col-md-2'> " + destination + " </div>" +
                 "<div class='col-md-2' id='update-freq' contenteditable='true'> " + frequency + " </div>" +
-                "<div class='col-md-2'> " + moment(nextTrain).format("HH:mm") + " </div>" +
+                "<div class='col-md-2'> " + moment(nextTrain).format("hh:mm") + " </div>" +
                 "<div class='col-md-2'> " + tMinutesTillTrain + " </div>" +
                 "<button class='btn btn-default' id='update-train' type='submit' data-train-key=" + dataKey + ">update</button>" +
                 "<button class='btn btn-default' id='remove-train' type='submit' data-train-key=" + dataKey + ">remove</button>";
@@ -202,29 +194,10 @@
             $("#current-schedule").append(newRow);
 
         }
-        // retrieve data from firebase database
-        function dataRetrieve() {
-            $("div.row").remove;
 
-            //database data added
-            database.ref().on("child_added", function (snapshot) {
-                console.log("databse child_added")
-                // console.log(snapshot.val());
-                // console.log(snapshot.key);
-
-                // show the data to the current train schedule
-                showTrain(snapshot.key, snapshot.val().trainID, snapshot.val().destination, snapshot.val().startTime, snapshot.val().frequency);
-
-                // Handle the errors
-            }, function (errorObject) {
-                console.log("Errors handled: " + errorObject.code);
-            });
-        }
-
-        dataRetrieve();
-
-        // add train button clicked
+        // Capture Button Click
         $("#add-train").on("click", function (event) {
+            // prevent page from refreshing when form tries to submit itself
             event.preventDefault();
 
             var trainInput = $("#train-input").val().trim();
@@ -232,20 +205,39 @@
             var timeInput = $("#time-input").val().trim();
             var freqInput = $("#frequency-input").val().trim();
 
+            // database.ref("/employeeList").push({
             database.ref().push({
+
                 trainID: trainInput,
                 destination: destiInput,
                 startTime: timeInput,
                 frequency: freqInput
+
             });
 
             addTrainClear();
+
+        });
+
+        //database data added
+        database.ref().on("child_added", function (snapshot) {
+            console.log("databse child_added")
+            // console.log(snapshot.val());
+            // console.log(snapshot.key);
+
+            // show the data to the current train schedule
+            // showTrain(dataKey,trainID, destination, firstTime, tFrequency)
+            showTrain(snapshot.key, snapshot.val().trainID, snapshot.val().destination, snapshot.val().startTime, snapshot.val().frequency);
+
+            // Handle the errors
+        }, function (errorObject) {
+            console.log("Errors handled: " + errorObject.code);
         });
 
         // remove button click
         $("div.row").on("click", "#remove-train", function (event) {
+            // prevent page from refreshing when form tries to submit itself
             event.preventDefault();
-
             var removeTrain = $(this).attr("data-train-key");
             console.log("remove-train button clicked: " + removeTrain);
 
@@ -257,19 +249,24 @@
             // });
             database.ref().child(removeTrain).remove();
 
-            dataRetrieve();
+            database.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", function (snapshot) {
+            // Change the HTML to reflect
+            showTrain(snapshot.key, snapshot.val().trainID, snapshot.val().destination, snapshot.val().startTime, snapshot.val().frequency);
+            });
 
         });
         // if user update the train frequency in a row
         $("div.row").on("keyup", "#update-freq", function (event) {
+            // $("div.row").on("DOMSubtreeModified", "#update-freq", function (event) {
+            // prevent page from refreshing when form tries to submit itself
             event.preventDefault();
-
             newFreq = $(this).text();
             console.log("newFreq: " + newFreq);
         });
 
         // update button click
         $("div.row").on("click", "#update-train", function (event) {
+            // prevent page from refreshing when form tries to submit itself
             event.preventDefault();
 
             var updateTrain = $(this).attr("data-train-key");
@@ -278,10 +275,17 @@
             database.ref().child(updateTrain).update({
                 frequency: newFreq
             });
-
-            dataRetrieve();
+            // database changes
+            database.ref().orderByChild("dateAdded").on("child_added", function (snapshot) {
+                // database.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", function (snapshot) {
+                // Change the HTML to reflect
+                showTrain(snapshot.key, snapshot.val().trainID, snapshot.val().destination, snapshot.val().startTime, snapshot.val().frequency);
+            });
 
         });
+
+
+
 
     </script>
 
