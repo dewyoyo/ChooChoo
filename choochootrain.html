@@ -222,6 +222,14 @@
         }
 
         dataRetrieve();
+        // auto refresh the current train schedule
+        function autoRefresh() {
+            var timerId;
+            clearInterval(timerId);
+            timerId = setInterval(dataRetrieve, 20 * 1000);
+        };
+
+        autoRefresh();
 
         // add train button clicked
         $("#add-train").on("click", function (event) {
@@ -240,6 +248,7 @@
             });
 
             addTrainClear();
+
         });
 
         // remove button click
