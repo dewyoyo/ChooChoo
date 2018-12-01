@@ -211,7 +211,7 @@
         }
         // retrieve data from firebase database
         function dataRetrieve() {
-            $("div.row").remove;
+            $("div.row").parent().remove;
 
             //database data added
             database.ref().on("child_added", function (snapshot) {
@@ -278,8 +278,8 @@
             //     frequency: null
             // });
             database.ref().child(removeTrain).remove();
-
-            reloadPage();
+            $(this).parent().remove();
+            // reloadPage();
 
         });
 
